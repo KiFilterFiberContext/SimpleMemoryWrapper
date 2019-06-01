@@ -9,6 +9,7 @@ namespace MemoryWrapper
 	{
 	public:
 		DWORD processID;
+		const char* gameTitle;
 
 		DWORD GetModuleBaseAddress(DWORD, const wchar_t*);
 
