@@ -53,7 +53,7 @@ DWORD Memory::GetPID()
 
 HANDLE Memory::GetHandle()
 {
-	DWORD pid = GetPID(gameTitle);
+	DWORD pid = GetPID();
 
 	HANDLE h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 	return h;
@@ -61,7 +61,7 @@ HANDLE Memory::GetHandle()
 
 void Memory::WriteToMemory(BYTE bytes[], DWORD address, int size)
 {
-	HANDLE h = GetHandle(gameTitle);
+	HANDLE h = GetHandle();
 	DWORD oldProtection;
 	DWORD newProtection;
 
@@ -75,7 +75,7 @@ void Memory::WriteToMemory(BYTE bytes[], DWORD address, int size)
 
 void Memory::ReadFromMemory(DWORD address, LPVOID buffer, int sizeOfBuffer)
 {
-	HANDLE h = GetHandle(gameTitle);
+	HANDLE h = GetHandle();
 	ReadProcessMemory(h, (DWORD*)address, &buffer, sizeOfBuffer, 0);
 	CloseHandle(h);
 }
