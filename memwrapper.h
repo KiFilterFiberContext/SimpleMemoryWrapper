@@ -13,9 +13,9 @@ namespace MemoryWrapper
 
 		DWORD GetModuleBaseAddress(DWORD, const wchar_t*);
 
-		DWORD GetPID(LPCSTR);
+		DWORD GetPID();
 
-		HANDLE GetHandle(LPCSTR);
+		HANDLE GetHandle();
 
 		void WriteToMemory(BYTE*, DWORD, int);
 
