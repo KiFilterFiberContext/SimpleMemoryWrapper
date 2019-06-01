@@ -17,7 +17,7 @@ namespace MemoryWrapper
 
 		HANDLE GetHandle();
 
-		void WriteToMemory(BYTE*, DWORD, int);
+		void WriteToMemory(const char*, DWORD, int);
 
 		void ReadFromMemory(DWORD, LPVOID, int);
 	};
