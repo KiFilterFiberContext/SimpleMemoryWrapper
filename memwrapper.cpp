@@ -59,7 +59,7 @@ HANDLE Memory::GetHandle()
 	return h;
 }
 
-void Memory::WriteToMemory(BYTE bytes[], DWORD address, int size)
+void Memory::WriteToMemory(const char* bytes, DWORD address, int size)
 {
 	HANDLE h = GetHandle();
 	DWORD oldProtection;
@@ -68,7 +68,7 @@ void Memory::WriteToMemory(BYTE bytes[], DWORD address, int size)
 	std::cin.get(); //waits to write memory
 
 	VirtualProtectEx(h, (LPVOID)address, size, PAGE_EXECUTE_READWRITE, &oldProtection);
-	WriteProcessMemory(h, (LPVOID)address, &bytes, size, 0);
+	WriteProcessMemory(h, (LPVOID)address, bytes, size, 0);
 	VirtualProtectEx(h, (LPVOID)address, size, oldProtection, &newProtection);
 	CloseHandle(h);
 }
