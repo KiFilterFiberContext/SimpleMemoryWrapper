@@ -29,13 +29,13 @@ DWORD Memory::GetModuleBaseAddress(DWORD procId, const wchar_t* modName)
 
 DWORD Memory::GetPID(LPCSTR windTitle)
 {
-	HWND hwnd = FindWindowA(0, "Geometry Dash");
+	HWND hwnd = FindWindowA(0, gameTitle);
 	DWORD pid;
 
 	while (hwnd == NULL)
 	{
 		hwnd = FindWindowA(0, windTitle);
-		std::cout << "Waiting for Geometry Dash...\n\n";
+		std::cout << "Waiting for process...\n\n";
 		Sleep(500);
 	}
 
@@ -53,7 +53,7 @@ DWORD Memory::GetPID(LPCSTR windTitle)
 
 HANDLE Memory::GetHandle(LPCSTR windTitle)
 {
-	DWORD pid = GetPID("Geometry Dash");
+	DWORD pid = GetPID(gameTitle);
 
 	HANDLE h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 	return h;
@@ -61,7 +61,7 @@ HANDLE Memory::GetHandle(LPCSTR windTitle)
 
 void Memory::WriteToMemory(BYTE bytes[], DWORD address, int size)
 {
-	HANDLE h = GetHandle("Geometry Dash");
+	HANDLE h = GetHandle(gameTitle);
 	DWORD oldProtection;
 	DWORD newProtection;
 
@@ -75,7 +75,7 @@ void Memory::WriteToMemory(BYTE bytes[], DWORD address, int size)
 
 void Memory::ReadFromMemory(DWORD address, LPVOID buffer, int sizeOfBuffer)
 {
-	HANDLE h = GetHandle("Geometry Dash");
+	HANDLE h = GetHandle(gameTitle);
 	ReadProcessMemory(h, (DWORD*)address, &buffer, sizeOfBuffer, 0);
 	CloseHandle(h);
 }
