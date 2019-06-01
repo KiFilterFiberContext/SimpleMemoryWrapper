@@ -27,14 +27,14 @@ DWORD Memory::GetModuleBaseAddress(DWORD procId, const wchar_t* modName)
 	return modBaseAddr;
 }
 
-DWORD Memory::GetPID(LPCSTR windTitle)
+DWORD Memory::GetPID()
 {
 	HWND hwnd = FindWindowA(0, gameTitle);
 	DWORD pid;
 
 	while (hwnd == NULL)
 	{
-		hwnd = FindWindowA(0, windTitle);
+		hwnd = FindWindowA(0, gameTitle);
 		std::cout << "Waiting for process...\n\n";
 		Sleep(500);
 	}
@@ -51,7 +51,7 @@ DWORD Memory::GetPID(LPCSTR windTitle)
 	return pid;
 }
 
-HANDLE Memory::GetHandle(LPCSTR windTitle)
+HANDLE Memory::GetHandle()
 {
 	DWORD pid = GetPID(gameTitle);
 
