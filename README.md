@@ -1,9 +1,14 @@
 # SimpleMemoryWrapper
-This is a very simple wrapper for writing to memory using the Windows API.  
-This is made primarely for myself so that I don't have to go through extra typing.
+This is a very simple wrapper for writing to memory using the Windows API. 
+It's not expected to be good, it's just here to document my progress while learning
 
-# Instructions for use in Visual Studio
-1. The first thing you need is to start an empty project using Visual Studio.
-2. Copy memwrapper.h and memwrapper.cpp to your main working directory (Source Files).
-3. To include the code in your main script, do #include "memwrapper.h" and make sure to include namespace MemoryWrapper.
-4. From there you can create a new Memory object and use the functions provided.
+# How to use it (if anyone does)
+Copy the git repository using git from the terminal or by directly downloading the zip file
+```
+git clone https://github.com/13laze/SimpleMemoryWrapper.git
+```
+
+If you downloaded the zip file make sure to extract the folder from it, though that should be obvious.  
+To use in your project simply add the files in the working directory and from there it will depend on your working environment.
+
+Not expecting anyone to use it beside mnyself because HAPIH but yeah here it is.
