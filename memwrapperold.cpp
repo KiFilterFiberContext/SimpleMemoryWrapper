@@ -1,6 +1,8 @@
 #include "pch.h" //Remove if you are not using Visual Studio
 #include "memwrapper.h"
 
+//hehe look at this
+
 using namespace MemoryWrapper;
 
 DWORD Memory::GetModuleBaseAddress(DWORD procId, const wchar_t* modName)
@@ -64,8 +66,6 @@ void Memory::WriteToMemory(const char* bytes, DWORD address, int size)
 	HANDLE h = GetHandle();
 	DWORD oldProtection;
 	DWORD newProtection;
-
-	std::cin.get(); //waits to write memory
 
 	VirtualProtectEx(h, (LPVOID)address, size, PAGE_EXECUTE_READWRITE, &oldProtection);
 	WriteProcessMemory(h, (LPVOID)address, bytes, size, 0);
