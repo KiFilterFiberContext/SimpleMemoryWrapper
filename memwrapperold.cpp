@@ -1,81 +1,141 @@
-#include "pch.h" //Remove if you are not using Visual Studio
-#include "memwrapper.h"
+#include "MemWrapper.h"
+using namespace MemWrapper;
 
-//hehe look at this
+// INTERNALS ~~~
+// honestly idk if all this code works 100% of the time, but it has worked for me so far
 
-using namespace MemoryWrapper;
-
-DWORD Memory::GetModuleBaseAddress(DWORD procId, const wchar_t* modName)
+bool IntUtils::PlaceHook(const LPVOID source, const LPVOID pHook, const int length = 5)
 {
-	uintptr_t modBaseAddr = 0;
-	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, procId);
-	if (hSnap != INVALID_HANDLE_VALUE)
-	{
-		MODULEENTRY32 modEntry;
-		modEntry.dwSize = sizeof(modEntry);
-		if (Module32First(hSnap, &modEntry))
-		{
-			do
-			{
-				if (!_wcsicmp(modEntry.szModule, modName))
-				{
-					modBaseAddr = (uintptr_t)modEntry.modBaseAddr;
-					break;
-				}
-			} while (Module32Next(hSnap, &modEntry));
-		}
-	}
-	CloseHandle(hSnap);
-	return modBaseAddr;
+	if (length < 5) { return false; };
+
+	DWORD p;
+
+	VirtualProtect(source, length, PAGE_READWRITE, &p);
+	memset(source, 0x90, length); // nop nop nop
+
+	*(BYTE*)source = 0xE9;
+
+	DWORD diff = reinterpret_cast<DWORD>( (DWORD)pHook - (DWORD)source );
+	*(DWORD*)((DWORD)source + 1) = diff; // bad mixup of casts lol
+
+	VirtualProtect(source, length, p, &p);
+	return GetLastError() ? false : true; // wait is this wrong, idk I'll fix later
 }
 
-DWORD Memory::GetPID()
+DWORD IntUtils::GetFuncAddress(const char* libName, const char* symbol)
 {
-	HWND hwnd = FindWindowA(0, gameTitle);
+	HMODULE lib = LoadLibraryA(libName);
+	DWORD prAddress = reinterpret_cast<DWORD>( GetProcAddress(lib, symbol) );
+
+	return GetLastError() ? NULL : prAddress;
+}
+
+void IntUtils::CreateNewConsole()
+{
+	AllocConsole();
+	freopen_s(&this->consoleOut, "CONOUT$", "w", stdout);
+}
+
+void IntUtils::DestroyConsole()
+{
+	fclose(this->consoleOut);
+	FreeConsole();
+}
+
+// EXTERNALS ~~~
+
+uintptr_t ExtUtils::GetModBaseAddress(const wchar_t* moduleName, const DWORD processID)
+{
+	HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, processID);
+	if (snap == INVALID_HANDLE_VALUE) { return NULL; };
+
+	MODULEENTRY32 m;
+	m.dwSize = sizeof(MODULEENTRY32); 
+
+	if (!Module32First(snap, &m)) { return NULL; }; // bcuz we can't check modules if the first one fails
+
+	do
+	{
+		if (!wcscmp(m.szModule, moduleName))
+		{
+			CloseHandle(snap);
+			return reinterpret_cast<uintptr_t>( m.modBaseAddr );
+		}
+	} while (Module32Next(snap, &m));
+
+	CloseHandle(snap);
+	return 0;
+}
+
+DWORD ExtUtils::GetPID(const char* windowTitle)
+{
+	HWND hwnd = FindWindowA(NULL, windowTitle);
 	DWORD pid;
 
-	while (hwnd == NULL)
+	while (!hwnd)
 	{
-		hwnd = FindWindowA(0, gameTitle);
-		std::cout << "Waiting for process...\n\n";
-		Sleep(500);
+		std::cout << "Locating " << windowTitle << std::endl; // uSe pRinTf
+		Sleep(250);
+
+		if (GetAsyncKeyState(VK_BACK)) // haven't tried this using console yet
+		{
+			break;
+		}
 	}
 
 	GetWindowThreadProcessId(hwnd, &pid);
-
-	if (pid == NULL)
-	{
-		std::cout << "Error with retrieving process id\n";
-		Sleep(500);
-		return 0;
-	}
-
-	return pid;
+	return GetLastError() ? NULL : pid; // yes
 }
 
-HANDLE Memory::GetHandle()
+HANDLE ExtUtils::GetHandle()
 {
-	DWORD pid = GetPID();
-
-	HANDLE h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+	HANDLE h = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, this->pid);
 	return h;
 }
 
-void Memory::WriteToMemory(const char* bytes, DWORD address, int size)
+bool ExtUtils::WriteToAddr(const DWORD addr, const char* bytes, const size_t length)
 {
-	HANDLE h = GetHandle();
-	DWORD oldProtection;
-	DWORD newProtection;
+	DWORD p;
 
-	VirtualProtectEx(h, (LPVOID)address, size, PAGE_EXECUTE_READWRITE, &oldProtection);
-	WriteProcessMemory(h, (LPVOID)address, bytes, size, 0);
-	VirtualProtectEx(h, (LPVOID)address, size, oldProtection, &newProtection);
-	CloseHandle(h);
+	if (this->gHandle == nullptr) { return false; };
+
+	VirtualProtectEx(gHandle, (LPVOID)(addr), length, PAGE_READWRITE, &p);
+	WriteProcessMemory(gHandle, (LPVOID)(addr), bytes, length, 0);
+	VirtualProtectEx(gHandle, (LPVOID)(addr), length, p, &p);
+
+	return GetLastError() ? false : true;
 }
 
-void Memory::ReadFromMemory(DWORD address, LPVOID buffer, int sizeOfBuffer)
+bool ExtUtils::WriteToAddrs(const std::vector<DWORD>& addrs, const std::vector<const char*>& byteArray)
 {
-	HANDLE h = GetHandle();
-	ReadProcessMemory(h, (DWORD*)address, &buffer, sizeOfBuffer, 0);
-	CloseHandle(h);
+	DWORD p;
+	if (this->gHandle == nullptr) { return false; };
+	
+	for (auto i = 0; i < addrs.size(); i++)
+	{
+		auto bytes = byteArray[i];
+		auto addr = addrs[i]; // why do I use auto here again
+
+		// length isn't working for now fully because null bytes
+		size_t length = sizeof(bytes) - 1;
+
+		VirtualProtectEx(gHandle, (LPVOID)(addr), length, PAGE_READWRITE, &p);
+		WriteProcessMemory(gHandle, (LPVOID)(addr), bytes, length, 0);
+		VirtualProtectEx(gHandle, (LPVOID)(addr), length, p, &p);
+	}
+
+	return GetLastError() ? false : true;
+}
+
+ExtUtils::ExtUtils(const char* title)
+{
+	this->windowTitle = title;
+	this->pid = this->GetPID(title);
+	this->gHandle = this->GetHandle();
+}
+
+ExtUtils::~ExtUtils()
+{
+	//This is a bad idea because what if there's an error :thinking:
+	CloseHandle(this->gHandle);
 }
