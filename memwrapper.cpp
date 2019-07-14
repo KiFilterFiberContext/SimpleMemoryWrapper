@@ -15,7 +15,7 @@ bool IntUtils::PlaceHook(const LPVOID source, const LPVOID pHook, const int leng
 
 	*(BYTE*)source = 0xE9;
 
-	DWORD diff = reinterpret_cast<DWORD>( (DWORD)pHook - (DWORD)source );
+	DWORD diff = static_cast<DWORD>( (DWORD)pHook - (DWORD)source ); 
 	*(DWORD*)((DWORD)source + 1) = diff; // bad mixup of casts lol
 
 	VirtualProtect(source, length, p, &p);
